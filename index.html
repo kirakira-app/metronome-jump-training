@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>メトロノーム・ジャンプ・トレーニング</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-    <style>
+<style>
         @keyframes jump-up {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(var(--jump-height, -120px)) scale(var(--jump-scale, 1.1)); }
@@ -31,10 +27,6 @@
 <body class="bg-slate-950 text-white overflow-hidden font-sans select-none">
 
     <div id="app" class="relative w-full h-screen">
-        <!-- ファイル入力 (非表示) -->
-        <input type="file" id="charInput" accept="image/*" class="hidden">
-        <input type="file" id="bgInput" accept="image/*" class="hidden">
-
         <!-- メッセージトースト -->
         <div id="toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-indigo-600 px-6 py-3 rounded-full font-bold shadow-2xl transition-all opacity-0 translate-y-[-20px] pointer-events-none border border-indigo-400">
             メッセージ
@@ -64,44 +56,28 @@
             </div>
         </div>
 
-        <!-- 2. アカウント登録・ログイン -->
-        <div id="authModal" class="fixed inset-0 flex items-center justify-center z-[190] p-4 bg-slate-950 hidden">
-            <div class="bg-slate-900 text-white p-8 rounded-[2rem] shadow-2xl text-center border-4 border-emerald-500 max-w-md w-full">
-                <h2 class="text-3xl font-black mb-3 text-emerald-400">アカウント設定</h2>
-                <p class="text-sm text-slate-300 mb-6 leading-relaxed">メールアドレスとパスワードで登録・ログインします。同じアカウントでログインすると、別の端末でも画像ライブラリを引き継げます。</p>
-                <div class="space-y-3 mb-5">
-                    <input type="email" id="authEmail" autocomplete="email" placeholder="メールアドレス" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                    <input type="password" id="authPassword" autocomplete="current-password" placeholder="パスワード（6文字以上）" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
+        <!-- 画像設定（通常は閉じておく） -->
+        <div id="imageSettingsModal" class="fixed inset-0 flex items-center justify-center z-[190] p-4 bg-black/80 backdrop-blur-sm hidden">
+            <div class="bg-slate-900 text-white p-7 rounded-[2rem] shadow-2xl border-2 border-blue-500 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <h2 class="text-2xl font-black mb-2 text-blue-300">画像の設定</h2>
+                <p class="text-sm text-slate-300 mb-5">いつもは今の画像のまま使えます。必要なときだけ変更してください。</p>
+                <div class="space-y-5">
+                    <section class="bg-slate-800 rounded-2xl p-4">
+                        <h3 class="font-bold mb-3">キャラクター画像</h3>
+                        <img id="settingsCharPreview" src="assets/IMG_3589.PNG" class="w-28 h-28 object-contain mx-auto mb-3" alt="現在のキャラクター">
+                        <label class="block text-center w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold cursor-pointer">画像を選ぶ<input id="settingsCharInput" type="file" accept="image/*" class="hidden"></label>
+                    </section>
+                    <section class="bg-slate-800 rounded-2xl p-4">
+                        <h3 class="font-bold mb-3">背景画像</h3>
+                        <img id="settingsBgPreview" src="assets/IMG_3591.PNG" class="w-full h-28 object-cover rounded-xl mb-3" alt="現在の背景">
+                        <label class="block text-center w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold cursor-pointer">画像を選ぶ<input id="settingsBgInput" type="file" accept="image/*" class="hidden"></label>
+                    </section>
                 </div>
-                <div class="space-y-3">
-                    <button id="btnRegister" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold">新しくアカウントを作成</button>
-                    <button id="btnLogin" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold">ログイン</button>
+                <div class="grid grid-cols-2 gap-3 mt-5">
+                    <button id="btnResetImages" class="py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-bold">初期画像に戻す</button>
+                    <button id="btnCloseImageSettings" class="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold">とじる</button>
                 </div>
-                <p id="authError" class="text-sm text-rose-300 mt-4" role="alert"></p>
-                <p class="text-xs text-slate-500 mt-4">パスワードは他のサービスと使い回さないでください。</p>
-            </div>
-        </div>
-
-        <!-- 4. 画像ライブラリ（ギャラリー）選択モーダル -->
-        <div id="libraryModal" class="fixed inset-0 flex items-center justify-center z-[170] p-4 bg-black/70 backdrop-blur-sm hidden">
-            <div class="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl border-4 border-blue-500 max-w-lg w-full animate-in zoom-in duration-200 pointer-events-auto">
-                <h3 id="libraryTitle" class="text-2xl font-black mb-4 text-blue-400">キャラクターを選択</h3>
-                
-                <div class="mb-6">
-                    <p class="text-xs text-slate-400 mb-3 font-bold">登録済みの画像ライブラリ（クリックで選択）</p>
-                    <div id="libraryGrid" class="grid grid-cols-3 gap-4 max-h-[240px] overflow-y-auto pr-1 no-scrollbar">
-                        <!-- ここにサムネイルが動的に生成されます -->
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between gap-3 pt-4 border-t border-white/10">
-                    <button id="btnLibraryUpload" class="px-5 py-3 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-blue-900/40">
-                        <span>📤</span>新しい画像を追加
-                    </button>
-                    <button id="btnCloseLibrary" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-sm transition-all active:scale-95 text-slate-400">
-                        キャンセル
-                    </button>
-                </div>
+                <p class="text-xs text-slate-400 mt-4">変更した画像は、この端末のブラウザに保存されます。他の端末とは共有されません。</p>
             </div>
         </div>
 
@@ -124,18 +100,8 @@
                                 <div class="text-blue-400 text-[10px] font-bold uppercase mb-1">BPM</div>
                                 <div id="bpmDisplay" class="text-3xl font-black">100</div>
                             </div>
-                            <!-- 背景登録ボタン -->
-                            <button id="btnTriggerBg" class="bg-black/60 hover:bg-black/80 w-12 h-12 rounded-full border border-white/10 text-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center" title="背景登録">
-                                <span>🌳</span>
-                            </button>
-                            <!-- アカウントボタン -->
-                            <button id="btnShowCode" class="bg-black/60 hover:bg-black/80 w-12 h-12 rounded-full border border-white/10 text-xl shadow-lg transition-all active:scale-95 text-emerald-400 flex items-center justify-center" title="ログアウト">
-                                <span>🔒</span>
-                            </button>
-                            <!-- キャラ登録ボタン -->
-                            <button id="btnTriggerChar" class="bg-blue-600 hover:bg-blue-500 text-white w-12 h-12 rounded-full text-xl shadow-xl transition-all active:scale-95 flex items-center justify-center border border-white/20" title="キャラ登録">
-                                <span>😊</span>
-                            </button>
+                            <!-- 画像設定ボタン：必要なときだけ画像を変更 -->
+                            <button id="btnOpenImageSettings" class="bg-black/60 hover:bg-black/80 w-12 h-12 rounded-full border border-white/10 text-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center" title="画像の設定" aria-label="画像の設定">⚙️</button>
                         </div>
                     </div>
                 </div>
@@ -219,45 +185,18 @@
         const PRESET_CHAR = "assets/IMG_3589.PNG";
         const PRESET_BG = "assets/IMG_3591.PNG";
 
-        // --- Firebase設定（このプロジェクト専用） ---
+        // --- 画像の初期設定 ---
         let apiKey = "";
-        const appId = 'metronome-jump-training';
-        const firebaseConfig = {
-            apiKey: "AIzaSyCpJgh0dX3t1nEFIf_WwsEzk-kFk9O8WyM",
-            authDomain: "metronome-jump-training.firebaseapp.com",
-            projectId: "metronome-jump-training",
-            storageBucket: "metronome-jump-training.firebasestorage.app",
-            messagingSenderId: "682073129460",
-            appId: "1:682073129460:web:c690d31b7d29fd71b7b9a1"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn('Auth persistence:', err));
-
-        // 状態管理
-        let state = {
-            user: null,
-            saveCode: null, // 互換用。実際の保存先は認証UID
+        const state = {
             isActive: false,
             bpm: 100,
             count: 0,
-            isJumping: false,
-            imgSrc: null,
-            bgSrc: null,
-            isSaving: false,
-            isSynced: false,
-            library: {
-                char: [{ id: null, url: PRESET_CHAR }],
-                bg: [{ id: null, url: PRESET_BG }]
-            },
-            currentLibraryType: 'char' // 現在開いているライブラリの種類 ('char' または 'bg')
+            imgSrc: PRESET_CHAR,
+            bgSrc: PRESET_BG
         };
 
         const elements = {
             video: document.getElementById('video'),
-            charInput: document.getElementById('charInput'),
-            bgInput: document.getElementById('bgInput'),
             bpmDisplay: document.getElementById('bpmDisplay'),
             jumpCountDisplay: document.getElementById('jumpCountDisplay'),
             charImg: document.getElementById('charImg'),
@@ -267,8 +206,6 @@
             btnStop: document.getElementById('btnStop'),
             btnFaster: document.getElementById('btnFaster'),
             btnSlower: document.getElementById('btnSlower'),
-            btnTriggerChar: document.getElementById('btnTriggerChar'),
-            btnTriggerBg: document.getElementById('btnTriggerBg'),
             guideArea: document.getElementById('guideArea'),
             guideEmoji: document.getElementById('guideEmoji'),
             resultModal: document.getElementById('resultModal'),
@@ -282,155 +219,115 @@
             apiKeyInput: document.getElementById('apiKeyInput'),
             btnSaveApiKey: document.getElementById('btnSaveApiKey'),
             btnSkipApiKey: document.getElementById('btnSkipApiKey'),
-            authModal: document.getElementById('authModal'),
-            authEmail: document.getElementById('authEmail'),
-            authPassword: document.getElementById('authPassword'),
-            authError: document.getElementById('authError'),
-            btnRegister: document.getElementById('btnRegister'),
-            btnLogin: document.getElementById('btnLogin'),
-            btnShowCode: document.getElementById('btnShowCode'),
-            libraryModal: document.getElementById('libraryModal'),
-            libraryTitle: document.getElementById('libraryTitle'),
-            libraryGrid: document.getElementById('libraryGrid'),
-            btnLibraryUpload: document.getElementById('btnLibraryUpload'),
-            btnCloseLibrary: document.getElementById('btnCloseLibrary')
+            imageSettingsModal: document.getElementById('imageSettingsModal'),
+            btnOpenImageSettings: document.getElementById('btnOpenImageSettings'),
+            btnCloseImageSettings: document.getElementById('btnCloseImageSettings'),
+            btnResetImages: document.getElementById('btnResetImages'),
+            settingsCharInput: document.getElementById('settingsCharInput'),
+            settingsBgInput: document.getElementById('settingsBgInput'),
+            settingsCharPreview: document.getElementById('settingsCharPreview'),
+            settingsBgPreview: document.getElementById('settingsBgPreview')
         };
 
-        // --- 認証・Firestore・Storage ---
-        let unsubscribeSettings = null;
-        const settingsRef = () => db.collection('users').doc(state.user.uid).collection('settings').doc('character');
-
-        function showAuthError(message) {
-            elements.authError.textContent = message;
-        }
-
-        async function registerAccount() {
-            const email = elements.authEmail.value.trim();
-            const password = elements.authPassword.value;
-            if (!email || password.length < 6) {
-                showAuthError('メールアドレスと6文字以上のパスワードを入力してください。');
-                return;
-            }
-            try {
-                showAuthError('');
-                await auth.createUserWithEmailAndPassword(email, password);
-                showToast('アカウントを作成しました');
-            } catch (err) {
-                console.error('Register error:', err);
-                showAuthError(authErrorMessage(err));
-            }
-        }
-
-        async function loginAccount() {
-            const email = elements.authEmail.value.trim();
-            const password = elements.authPassword.value;
-            if (!email || !password) {
-                showAuthError('メールアドレスとパスワードを入力してください。');
-                return;
-            }
-            try {
-                showAuthError('');
-                await auth.signInWithEmailAndPassword(email, password);
-                showToast('ログインしました');
-            } catch (err) {
-                console.error('Login error:', err);
-                showAuthError(authErrorMessage(err));
-            }
-        }
-
-        function authErrorMessage(err) {
-            const messages = {
-                'auth/email-already-in-use': 'このメールアドレスは登録済みです。ログインしてください。',
-                'auth/invalid-email': 'メールアドレスの形式を確認してください。',
-                'auth/weak-password': 'パスワードは6文字以上にしてください。',
-                'auth/invalid-credential': 'メールアドレスまたはパスワードが違います。',
-                'auth/user-not-found': 'アカウントが見つかりません。新規登録してください。',
-                'auth/network-request-failed': '通信に失敗しました。ネットワークを確認してください。'
-            };
-            return messages[err.code] || `認証に失敗しました（${err.code || 'unknown'}）。`;
-        }
-
-        async function syncFirestore() {
-            if (!state.user) return;
-            if (unsubscribeSettings) unsubscribeSettings();
-            const ref = settingsRef();
-            unsubscribeSettings = ref.onSnapshot(async (doc) => {
-                if (!doc.exists) {
-                    await saveInitialPresetToCloud();
-                    return;
-                }
-                const data = doc.data();
-                state.library.char = await hydrateLibrary(data.charLibrary, 'char');
-                state.library.bg = await hydrateLibrary(data.bgLibrary, 'bg');
-                const charItem = state.library.char.find(x => x.id === (data.charId || null)) || state.library.char[0];
-                const bgItem = state.library.bg.find(x => x.id === (data.bgId || null)) || state.library.bg[0];
-                if (charItem) {
-                    state.imgSrc = charItem.url;
-                    elements.charImg.src = charItem.url;
-                    elements.charImg.classList.remove('hidden');
-                    elements.charPlaceholder.classList.add('hidden');
-                }
-                if (bgItem) {
-                    state.bgSrc = bgItem.url;
-                    elements.bgImg.src = bgItem.url;
-                }
-                if (!elements.libraryModal.classList.contains('hidden')) renderLibraryGrid();
-            }, (err) => {
-                console.error('Firestore sync error:', err);
-                showToast('クラウド同期に失敗しました。設定を確認してください。');
+        // 画像はIndexedDBに保存。ログインやクラウド同期は不要。
+        const IMAGE_DB_NAME = 'metronome-jump-local';
+        const IMAGE_STORE = 'images';
+        function openImageDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(IMAGE_DB_NAME, 1);
+                request.onupgradeneeded = () => request.result.createObjectStore(IMAGE_STORE);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
             });
         }
-
-        async function hydrateLibrary(entries, type) {
-            const defaults = [{id: null, url: type === 'char' ? PRESET_CHAR : PRESET_BG}];
-            if (!Array.isArray(entries) || !entries.length) return defaults;
-            const loaded = await Promise.all(entries.map(async (entry) => {
-                if (!entry || !entry.id) return {id: null, url: type === 'char' ? PRESET_CHAR : PRESET_BG};
-                try {
-                    const snap = await db.collection('users').doc(state.user.uid).collection('images').doc(entry.id).get();
-                    if (!snap.exists) return null;
-                    return {id: entry.id, url: snap.data().dataUrl};
-                } catch (err) {
-                    console.warn('Image document load failed:', err);
-                    return null;
-                }
-            }));
-            const valid = loaded.filter(Boolean);
-            return valid.length ? valid : defaults;
+        async function getSavedImage(key) {
+            const db = await openImageDB();
+            return new Promise((resolve, reject) => {
+                const request = db.transaction(IMAGE_STORE, 'readonly').objectStore(IMAGE_STORE).get(key);
+                request.onsuccess = () => { resolve(request.result || null); db.close(); };
+                request.onerror = () => { reject(request.error); db.close(); };
+            });
         }
-
-        async function saveInitialPresetToCloud() {
-            if (!state.user) return;
-            await settingsRef().set({
-                charLibrary: [{id: null}],
-                bgLibrary: [{id: null}],
-                charId: null,
-                bgId: null,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, {merge: true});
+        async function saveImage(key, value) {
+            const db = await openImageDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IMAGE_STORE, 'readwrite');
+                tx.objectStore(IMAGE_STORE).put(value, key);
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            });
         }
-
-        async function saveSettings(patch) {
-            if (!state.user) throw new Error('ログインが必要です');
-            await settingsRef().set({...patch, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge: true});
+        async function deleteSavedImages() {
+            const db = await openImageDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IMAGE_STORE, 'readwrite');
+                tx.objectStore(IMAGE_STORE).clear();
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            });
         }
-
-        function startAuthListener() {
-            auth.onAuthStateChanged(async (user) => {
-                state.user = user;
-                state.saveCode = user ? user.uid : null;
-                if (user) {
-                    elements.authModal.classList.add('hidden');
-                    showToast('ログインしました。データを同期しています。');
-                    await startCamera();
-                    await syncFirestore();
+        async function loadSavedImages() {
+            try {
+                state.imgSrc = await getSavedImage('character') || PRESET_CHAR;
+                state.bgSrc = await getSavedImage('background') || PRESET_BG;
+            } catch (err) {
+                console.warn('画像の保存データを読み込めませんでした:', err);
+                state.imgSrc = PRESET_CHAR;
+                state.bgSrc = PRESET_BG;
+            }
+            elements.charImg.src = state.imgSrc;
+            elements.charImg.classList.remove('hidden');
+            elements.charPlaceholder.classList.add('hidden');
+            elements.bgImg.src = state.bgSrc;
+            elements.settingsCharPreview.src = state.imgSrc;
+            elements.settingsBgPreview.src = state.bgSrc;
+        }
+        async function resizeImageFile(file, type) {
+            if (!file || !file.type.startsWith('image/')) throw new Error('画像ファイルを選んでください。');
+            const objectUrl = URL.createObjectURL(file);
+            try {
+                const img = new Image();
+                await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = objectUrl; });
+                const maxDim = type === 'character' ? 700 : 1400;
+                const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(img.width * scale));
+                canvas.height = Math.max(1, Math.round(img.height * scale));
+                const ctx = canvas.getContext('2d');
+                if (type === 'background') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                return type === 'character' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.82);
+            } finally { URL.revokeObjectURL(objectUrl); }
+        }
+        async function changeLocalImage(file, type) {
+            try {
+                showToast('画像を保存しています...');
+                const dataUrl = await resizeImageFile(file, type);
+                await saveImage(type, dataUrl);
+                if (type === 'character') {
+                    state.imgSrc = dataUrl;
+                    elements.charImg.src = dataUrl;
+                    elements.settingsCharPreview.src = dataUrl;
                 } else {
-                    if (unsubscribeSettings) unsubscribeSettings();
-                    unsubscribeSettings = null;
-                    state.isSynced = false;
-                    elements.authModal.classList.remove('hidden');
+                    state.bgSrc = dataUrl;
+                    elements.bgImg.src = dataUrl;
+                    elements.settingsBgPreview.src = dataUrl;
                 }
-            });
+                showToast('画像を変更しました');
+            } catch (err) {
+                console.error('画像変更エラー:', err);
+                showToast(err.message || '画像を変更できませんでした');
+            }
+        }
+        async function resetLocalImages() {
+            try {
+                await deleteSavedImages();
+                await loadSavedImages();
+                showToast('最初の画像に戻しました');
+            } catch (err) {
+                console.error(err);
+                showToast('初期画像に戻せませんでした');
+            }
         }
 
         // --- カメラ & オーディオ ---
@@ -592,7 +489,8 @@
             }
             elements.btnGetAdvice.classList.add('hidden');
             elements.aiLoading.classList.remove('hidden');
-            const prompt = `ジャンプトレーニング結果: ${state.count}回、テンポ${state.bpm}BPM。元気づける日本語メッセージを120文字以内で作成してください。`;
+            const completedCount = Number(elements.finalCount.textContent) || 0;
+            const prompt = `ジャンプトレーニング結果: ${completedCount}回、テンポ${state.bpm}BPM。元気づける日本語メッセージを120文字以内で作成してください。`;
             
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
@@ -625,145 +523,12 @@
             }, 3000);
         }
 
-        // --- 画像ライブラリ ---
-        function openLibraryModal(type) {
-            if (!state.user) { showToast('先にログインしてください'); return; }
-            state.currentLibraryType = type;
-            elements.libraryTitle.textContent = type === 'char' ? 'キャラクターを選択' : '背景を選択';
-            renderLibraryGrid();
-            elements.libraryModal.classList.remove('hidden');
-        }
-
-        function renderLibraryGrid() {
-            elements.libraryGrid.innerHTML = '';
-            const items = state.currentLibraryType === 'char' ? state.library.char : state.library.bg;
-            const activeSrc = state.currentLibraryType === 'char' ? state.imgSrc : state.bgSrc;
-            items.forEach((item, idx) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = `relative aspect-square rounded-2xl overflow-hidden border-4 cursor-pointer transition-all active:scale-95 shadow-md ${activeSrc === item.url ? 'border-emerald-500 scale-95 ring-4 ring-emerald-500/20' : 'border-slate-800 hover:border-blue-400'}`;
-                const img = document.createElement('img');
-                img.src = item.url;
-                img.className = 'w-full h-full object-cover bg-slate-800';
-                wrapper.onclick = () => selectLibraryItem(state.currentLibraryType, idx, true);
-                if (idx > 0) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.innerHTML = '❌';
-                    deleteBtn.className = 'absolute top-1 right-1 bg-black/75 hover:bg-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs text-white shadow-md';
-                    deleteBtn.onclick = (e) => { e.stopPropagation(); deleteLibraryItem(state.currentLibraryType, idx); };
-                    wrapper.appendChild(deleteBtn);
-                }
-                wrapper.appendChild(img);
-                elements.libraryGrid.appendChild(wrapper);
-            });
-        }
-
-        async function selectLibraryItem(type, index, shouldClose = true) {
-            const items = type === 'char' ? state.library.char : state.library.bg;
-            const item = items[index];
-            if (!item) return;
-            if (type === 'char') {
-                state.imgSrc = item.url;
-                elements.charImg.src = item.url;
-                elements.charImg.classList.remove('hidden');
-                elements.charPlaceholder.classList.add('hidden');
-                await saveSettings({charId: item.id || null});
-            } else {
-                state.bgSrc = item.url;
-                elements.bgImg.src = item.url;
-                await saveSettings({bgId: item.id || null});
-            }
-            if (shouldClose) {
-                elements.libraryModal.classList.add('hidden');
-                showToast(type === 'char' ? 'キャラクターを変更しました！' : '背景を変更しました！');
-            }
-        }
-
-        async function deleteLibraryItem(type, index) {
-            const items = type === 'char' ? [...state.library.char] : [...state.library.bg];
-            if (index <= 0 || !items[index]) return;
-            const [removed] = items.splice(index, 1);
-            try {
-                if (removed.id) await db.collection('users').doc(state.user.uid).collection('images').doc(removed.id).delete();
-                if (type === 'char') {
-                    state.library.char = items;
-                    if (state.imgSrc === removed.url) await selectLibraryItem('char', 0, false);
-                    await saveSettings({charLibrary: items.map(x => ({id: x.id || null}))});
-                } else {
-                    state.library.bg = items;
-                    if (state.bgSrc === removed.url) await selectLibraryItem('bg', 0, false);
-                    await saveSettings({bgLibrary: items.map(x => ({id: x.id || null}))});
-                }
-                renderLibraryGrid();
-                showToast('ライブラリから削除しました');
-            } catch (err) {
-                console.error('Library delete error:', err);
-                showToast('削除できませんでした');
-            }
-        }
-
-        async function processAndSaveImage(file, type) {
-            if (!state.user) { showToast('先にログインしてください'); return; }
-            if (!file || !file.type.startsWith('image/')) { showToast('画像ファイルを選択してください'); return; }
-            state.isSaving = true;
-            showToast('画像を最適化して保存しています...');
-            try {
-                const objectUrl = URL.createObjectURL(file);
-                const img = new Image();
-                await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = objectUrl; });
-                let dataUrl = '';
-                // Firestoreの1ドキュメント上限（1MiB）を超えないよう、個別画像ドキュメントに保存。
-                for (const maxDim of (type === 'char' ? [500, 420, 340, 280] : [760, 640, 520, 420])) {
-                    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.max(1, Math.round(img.width * scale));
-                    canvas.height = Math.max(1, Math.round(img.height * scale));
-                    const ctx = canvas.getContext('2d');
-                    if (type === 'bg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    dataUrl = type === 'char' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.68);
-                    if (dataUrl.length < 850000) break;
-                }
-                URL.revokeObjectURL(objectUrl);
-                if (!dataUrl || dataUrl.length >= 900000) throw new Error('画像が大きすぎます。別の画像をお試しください。');
-                const currentList = type === 'char' ? [...state.library.char] : [...state.library.bg];
-                if (currentList.length >= 6) { showToast('ライブラリが一杯です。不要な画像を削除してください。'); return; }
-                const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-                await db.collection('users').doc(state.user.uid).collection('images').doc(id).set({
-                    dataUrl,
-                    type,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                const item = {id, url: dataUrl};
-                currentList.push(item);
-                if (type === 'char') {
-                    state.library.char = currentList;
-                    state.imgSrc = dataUrl;
-                    elements.charImg.src = dataUrl;
-                    elements.charImg.classList.remove('hidden');
-                    elements.charPlaceholder.classList.add('hidden');
-                    await saveSettings({charLibrary: currentList.map(x => ({id: x.id || null})), charId: id});
-                } else {
-                    state.library.bg = currentList;
-                    state.bgSrc = dataUrl;
-                    elements.bgImg.src = dataUrl;
-                    await saveSettings({bgLibrary: currentList.map(x => ({id: x.id || null})), bgId: id});
-                }
-                showToast('新しい画像を保存しました！');
-                renderLibraryGrid();
-            } catch (err) {
-                console.error('Image save error:', err);
-                showToast(err.message || '画像を保存できませんでした');
-            } finally {
-                state.isSaving = false;
-                elements.charInput.value = '';
-                elements.bgInput.value = '';
-            }
-        }
-
         // --- ブートストラップ ---
         async function startApp() {
-            startAuthListener();
+            await loadSavedImages();
             updateJumpStyles();
+            // カメラは画像設定やAI設定とは独立して起動します。
+            startCamera();
         }
 
         // --- イベントリスナー ---
@@ -815,51 +580,27 @@
             updateJumpStyles(); 
         };
 
-        // アクションボタンをライブラリへの導線に変更
-        elements.btnTriggerChar.onclick = () => openLibraryModal('char');
-        elements.charPlaceholder.onclick = () => openLibraryModal('char');
-        elements.charImg.onclick = () => openLibraryModal('char');
-        elements.btnTriggerBg.onclick = () => openLibraryModal('bg');
-
-        // ライブラリモーダル内のアップロード指示
-        elements.btnLibraryUpload.onclick = () => {
-            if (state.currentLibraryType === 'char') {
-                elements.charInput.click();
-            } else {
-                elements.bgInput.click();
-            }
-        };
-
-        elements.btnCloseLibrary.onclick = () => {
-            elements.libraryModal.classList.add('hidden');
-        };
-
-        // ファイル入力のハンドラ
-        elements.charInput.onchange = (e) => {
-            if (e.target.files[0]) {
-                processAndSaveImage(e.target.files[0], 'char');
-            }
-        };
-        elements.bgInput.onchange = (e) => {
-            if (e.target.files[0]) {
-                processAndSaveImage(e.target.files[0], 'bg');
-            }
-        };
-
+        // 結果画面の操作
         elements.btnGetAdvice.onclick = fetchAdvice;
-        elements.btnCloseResult.onclick = () => elements.resultModal.classList.add('hidden');
-
-        // アカウント操作
-        elements.btnShowCode.onclick = async () => {
-            if (auth.currentUser) {
-                if (confirm('ログアウトしますか？')) await auth.signOut();
-            } else {
-                elements.authModal.classList.remove('hidden');
-            }
+        elements.btnCloseResult.onclick = () => {
+            elements.resultModal.classList.add('hidden');
         };
-        elements.btnRegister.onclick = registerAccount;
-        elements.btnLogin.onclick = loginAccount;
-        elements.authPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginAccount(); });
+
+        // 画像設定（通常は閉じておく）
+        elements.btnOpenImageSettings.onclick = () => elements.imageSettingsModal.classList.remove('hidden');
+        elements.btnCloseImageSettings.onclick = () => elements.imageSettingsModal.classList.add('hidden');
+        elements.imageSettingsModal.addEventListener('click', (e) => {
+            if (e.target === elements.imageSettingsModal) elements.imageSettingsModal.classList.add('hidden');
+        });
+        elements.settingsCharInput.onchange = (e) => {
+            if (e.target.files[0]) changeLocalImage(e.target.files[0], 'character');
+            e.target.value = '';
+        };
+        elements.settingsBgInput.onchange = (e) => {
+            if (e.target.files[0]) changeLocalImage(e.target.files[0], 'background');
+            e.target.value = '';
+        };
+        elements.btnResetImages.onclick = resetLocalImages;
 
         // APIキー保存イベント
         elements.btnSaveApiKey.onclick = () => {
@@ -871,14 +612,12 @@
                 showToast('APIキー未入力のため、AIアドバイスはオフになります。');
             }
             elements.apiKeyModal.classList.add('hidden');
-            elements.authModal.classList.remove('hidden');
         };
 
         elements.btnSkipApiKey.onclick = () => {
             apiKey = '';
             showToast('AIアドバイスはオフになります');
             elements.apiKeyModal.classList.add('hidden');
-            elements.authModal.classList.remove('hidden');
         };
 
         // 実行開始
