@@ -22,6 +22,70 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+    
+
+        /* 横画面：iPhone・iPadの画面高さに合わせて全体をコンパクトにする */
+        @media screen and (orientation: landscape) and (max-height: 700px) {
+            html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+            body { overscroll-behavior: none; }
+            #app { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+            #app > .relative.z-20 { min-height: 0; }
+            #app > .relative.z-20 > .absolute.top-4 {
+                top: max(5px, env(safe-area-inset-top));
+                height: auto;
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+            }
+            #app > .relative.z-20 > .flex-1 {
+                min-height: 0;
+                padding-top: 58px;
+                padding-bottom: 112px;
+                box-sizing: border-box;
+            }
+            #bpmDisplay, #jumpCountDisplay { font-size: clamp(1.15rem, 4.2vh, 1.8rem); line-height: 1; }
+            #app .bg-black\/80.p-3.rounded-3xl { padding: 6px 9px; border-radius: 13px; min-width: 58px; }
+            #app .bg-black\/80.p-3.rounded-3xl .text-blue-400,
+            #app .bg-black\/80.p-3.rounded-3xl .text-yellow-400 { font-size: 8px; margin-bottom: 2px; }
+            #btnOpenImageSettings { width: 36px; height: 36px; font-size: 16px; }
+            #charArea { padding-bottom: 4px; }
+            #charImg { max-width: min(34vw, 34vh); max-height: 100%; }
+            #charPlaceholder { max-width: min(30vw, 30vh); margin-bottom: 12px; border-radius: 20px; }
+            #charPlaceholder .text-5xl { font-size: 2rem; margin-bottom: 5px; }
+            #guideArea { padding: 4px 8px 0; min-height: 0; }
+            #guideArea > div { border-width: 2px; border-radius: 20px; padding-top: 8px; }
+            #guideEmoji { font-size: clamp(3rem, 18vh, 7rem); margin-bottom: 5px; }
+            #guideArea p { font-size: clamp(.75rem, 3.2vh, 1.15rem); line-height: 1.35; padding-left: 5px; padding-right: 5px; }
+            #app > .relative.z-20 > .absolute.bottom-0 {
+                bottom: max(4px, env(safe-area-inset-bottom));
+                padding: 4px max(10px, env(safe-area-inset-right)) 4px max(10px, env(safe-area-inset-left));
+            }
+            #app > .relative.z-20 > .absolute.bottom-0 > div { max-width: 520px; space-y: 0; }
+            #app > .relative.z-20 > .absolute.bottom-0 .grid { gap: 7px; }
+            #app > .relative.z-20 > .absolute.bottom-0 .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 6px; }
+            #btnStart, #btnStop { padding-top: clamp(7px, 2.2vh, 13px); padding-bottom: clamp(7px, 2.2vh, 13px); font-size: clamp(1rem, 4vh, 1.55rem); border-radius: 14px; }
+            #btnFaster, #btnSlower { padding-top: clamp(6px, 1.8vh, 11px); padding-bottom: clamp(6px, 1.8vh, 11px); font-size: clamp(.8rem, 3vh, 1.1rem); border-radius: 12px; }
+            #app > .relative.z-20 > .absolute.bottom-0 .max-w-md { max-width: 520px; }
+            #toast { top: 8px; padding: 7px 14px; font-size: 12px; }
+            #imageSettingsModal > div, #apiKeyModal > div, #resultModal > div {
+                max-height: calc(100dvh - 16px);
+                overflow-y: auto;
+                padding: 14px;
+                border-radius: 20px;
+            }
+            #resultModal > div { border-width: 5px; }
+            #finalCount { font-size: clamp(2.5rem, 12vh, 5rem); }
+        }
+
+        /* 特に高さの小さいスマートフォン横画面 */
+        @media screen and (orientation: landscape) and (max-height: 430px) {
+            #app > .relative.z-20 > .flex-1 { padding-top: 48px; padding-bottom: 94px; }
+            #app > .relative.z-20 > .absolute.top-4 { padding-left: 7px; padding-right: 7px; }
+            #app > .relative.z-20 > .absolute.bottom-0 { padding-left: 7px; padding-right: 7px; }
+            #btnStart, #btnStop { padding-top: 5px; padding-bottom: 5px; }
+            #btnFaster, #btnSlower { padding-top: 4px; padding-bottom: 4px; }
+            #guideEmoji { font-size: clamp(2.5rem, 15vh, 4.5rem); }
+        }
+
     </style>
 </head>
 <body class="bg-slate-950 text-white overflow-hidden font-sans select-none">
