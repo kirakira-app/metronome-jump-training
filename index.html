@@ -151,6 +151,36 @@
             }
         }
 
+    
+        /* 横画面：案内表示をカメラ枠の中央へ、操作ボタンを中央にコンパクトに配置 */
+        @media screen and (orientation: landscape) {
+            #guideArea > div {
+                justify-content: center;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            #guideEmoji {
+                margin-bottom: 8px;
+            }
+            #guideArea p {
+                margin-top: 0;
+            }
+            #app > .relative.z-20 > .absolute.bottom-0 {
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: min(420px, 38vw);
+                padding: 0 8px max(4px, env(safe-area-inset-bottom));
+                box-sizing: border-box;
+            }
+            #app > .relative.z-20 > .absolute.bottom-0 > div {
+                width: 100%;
+                max-width: none;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
     </style>
 </head>
 <body class="bg-slate-950 text-white overflow-hidden font-sans select-none">
