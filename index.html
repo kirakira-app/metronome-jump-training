@@ -181,42 +181,6 @@
             }
         }
 
-    
-        /* 横画面：背景画像の表示領域をカメラ枠と同じ高さにそろえる */
-        @media screen and (orientation: landscape) {
-            #charArea {
-                height: 100%;
-                min-height: 0;
-                align-self: stretch;
-                overflow: hidden;
-            }
-            #charArea > img,
-            #charArea > .absolute {
-                max-height: 100%;
-            }
-        }
-
-    
-        /* 横画面：カメラの点線枠をカメラ領域の外枠いっぱいに合わせる */
-        @media screen and (orientation: landscape) {
-            #guideArea {
-                height: 100%;
-                min-height: 0;
-                align-self: stretch;
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-                box-sizing: border-box;
-                overflow: hidden;
-            }
-            #guideArea > div {
-                height: 100%;
-                min-height: 0;
-                margin-top: 0;
-                margin-bottom: 0;
-                box-sizing: border-box;
-            }
-        }
-
     </style>
 </head>
 <body class="bg-slate-950 text-white overflow-hidden font-sans select-none">
